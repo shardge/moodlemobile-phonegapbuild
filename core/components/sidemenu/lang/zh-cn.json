@@ -1,5 +1,7 @@
 {
-    "changesite": "注销",
+    "appsettings": "设置",
+	"togglemenu": "下拉型菜单",
+	"changesite": "注销",
     "help": "帮助",
     "mycourses": "我的课程",
     "website": "网站"

@@ -13,5 +13,10 @@
     "sites": "网站",
     "spaceusage": "空间使用情况",
     "success": "成功",
+	"synchronization": "同步",
+    "synchronizenow": "现在同步",
+    "synchronizing": "同步中",
+	 "enablesyncwifi": "仅允许WiFi连接时同步",
+    "syncsettings": "同步设置",
     "total": "总共"
 }

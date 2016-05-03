@@ -1,4 +1,8 @@
 {
     "noevents": "没有事件",
     "notifications": "通知"
+	"calendarevents": "日程",
+    "errorloadevent": "错误",
+    "errorloadevents": "错误",
+    
 }
