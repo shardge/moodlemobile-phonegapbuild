@@ -546,6 +546,12 @@
     "mma.notes.publishstate": "上下文",
     "mma.notes.sitenotes": "全站备注",
     "mma.notifications.notifications": "通知",
-    "mma.notifications.therearentnotificationsyet": "没有通知",
+    "mma.notifications.therearentnotificationsyet": "没有通知",	
+	"mm.settings.enabledownloadsection": "允许下载小节",
+    "mm.settings.enabledownloadsectiondescription": "禁止该选项将加快加载的速度.",
+	"mm.settings.reportinbackground": "自动报告错误",
+	"mm.courses.filtermycourses": "过滤我的课程",
+	"mma.messages.newmessage": "新消息...",
+    "mma.messages.nomessages": "无消息",
     "mma.participants.participants": "课程参与者"
 }

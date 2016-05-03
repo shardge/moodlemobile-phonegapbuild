@@ -8,11 +8,17 @@
     "file": "文件",
     "fileuploaded": "文件已上传",
     "myfiles": "我的文件",
-    "readingfile": "Odczytywanie pliku",
+    "readingfile": "读取文件中",
+	"photoalbums": "照片",
     "sitefiles": "站点文件",
     "success": "成功",
     "uploadafile": "上传一个文件",
     "uploadfiles": "可以上传文件",
     "uploading": "上传中",
+	"myprivatefiles": "我的私人文件",
+    "myprivatefilesdesc": "这些文件存放于e-Learning平台上你的私人文件区域。",
+	"sitefilesdesc": "e-Learning平台上的其他文件。",
+	"audio": "音频",
+    "camera": "相机",
     "video": "视频"
 }

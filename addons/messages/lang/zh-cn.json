@@ -10,5 +10,7 @@
     "removecontact": "删除联系人",
     "send": "发送",
     "sendmessage": "发送消息",
+	"newmessage": "新消息...",
+	"nomessages": "无消息.",
     "unblockcontact": "不再阻拦联系人"
 }

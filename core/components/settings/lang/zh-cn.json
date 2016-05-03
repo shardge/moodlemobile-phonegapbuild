@@ -18,5 +18,8 @@
     "synchronizing": "同步中",
 	 "enablesyncwifi": "仅允许WiFi连接时同步",
     "syncsettings": "同步设置",
+	 "enabledownloadsection": "允许下载小节",
+    "enabledownloadsectiondescription": "禁止该选项将加快加载的速度.",
+	"reportinbackground": "自动报告错误",
     "total": "总共"
 }
