@@ -7,8 +7,9 @@
         <div class="item item-text-wrap">{{ 'mm.login.newsitedescription' | translate }}</div>
         <form>
           <label class="item item-input item-stacked-label">
-            <span class="input-label">{{ 'mm.login.siteaddress' | translate }}</span>
-            <input type="url" placeholder="moodle.org" ng-model="siteurl" mm-no-input-validation mm-auto-focus >
+            <!--span class="input-label">{{ 'mm.login.siteaddress' | translate }}</span-->
+            <!--input type="url" placeholder="moodle.org" ng-model="siteurl" mm-no-input-validation mm-auto-focus -->
+			<input type="hidden" value="http://glearning.tju.edu.cn" ng-model="siteurl" >
           </label>
           <div class="item">
               <button class="button button-block" ng-click="connect(siteurl)" ng-disabled="!siteurl">{{ 'mm.login.connect' | translate }}</button>

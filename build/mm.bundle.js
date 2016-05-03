@@ -3582,7 +3582,7 @@ angular.module('mm.core')
         return appUsesLocalMobile;
     }
         function validateSiteInfo(infos) {
-        if (!infos.firstname || !infos.lastname) {
+        if (!infos.firstname) {
             var moodleLink = '<a mm-link href="' + infos.siteurl + '">' + infos.siteurl + '</a>';
             return {error: 'mm.core.requireduserdatamissing', params: {'$a': moodleLink}};
         }
@@ -8499,7 +8499,7 @@ angular.module('mm.core.login')
 angular.module('mm.core.login')
 .controller('mmLoginSiteCtrl', ["$scope", "$state", "$mmSitesManager", "$mmUtil", "$translate", "$ionicHistory", "$mmApp", "$ionicModal", "$mmLoginHelper", function($scope, $state, $mmSitesManager, $mmUtil, $translate, $ionicHistory, $mmApp,
         $ionicModal, $mmLoginHelper) {
-    $scope.siteurl = '';
+    $scope.siteurl = 'http://glearning.tju.edu.cn';
     $scope.connect = function(url) {
         $mmApp.closeKeyboard();
         if (!url) {
