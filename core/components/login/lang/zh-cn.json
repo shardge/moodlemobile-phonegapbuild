@@ -18,5 +18,6 @@
     "siteurlrequired": "需要填写站点URL，比如<i>http://www.yourmoodlesite.abc 或https://www.yourmoodlesite.efg</i>",
     "username": "用户名",
     "usernamerequired": "用户名必填",
+	"confirmdeletesite": "确认要删除 {{sitename}}吗?",
     "webservicesnotenabled": "您的站点未开启网络服务。如果您觉得应当启用移动接入功能，请与站点管理员联系。"
 }
