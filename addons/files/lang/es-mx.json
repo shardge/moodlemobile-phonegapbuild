@@ -1,5 +1,5 @@
 {
-    "admindisableddownload": "Por favor tome nota de que su administrador de Moodle deshabilitó las descargas de archivos; Usted puede ojear los archivos pero no puede descargarlos.",
+    "admindisableddownload": "Por favor tome nota de que su administrador de Moodle deshabilitó las descargas de archivos; Usted puede ver los archivos pero no puede descargarlos.",
     "audio": "Audio",
     "camera": "Cámara",
     "chooseaccountuploadfile": "Elija una cuenta a la cual subir el archivo.",
@@ -16,6 +16,7 @@
     "errornoapp": "Usted no tiene una app instalada para realizar esta acción.",
     "errorreadingfile": "Eror al leer archivo.",
     "errorreceivefilenosites": "No hay archivos almacenados. Por favor, añada un sitio antes de intentar subir un archivo.",
+    "erroruploadnotworking": "Desafortunadamente ahorita no es posible subir archivos a su sitio.",
     "errorwhiledownloading": "Ocurrió un error al tratar de descargar el archivo.",
     "errorwhilerecordingaudio": "Ocurrió un error al tratar de grabar audio.",
     "errorwhileuploading": "Ocurrió un error al subir un archivo.",

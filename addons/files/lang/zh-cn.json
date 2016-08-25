@@ -1,13 +1,7 @@
 {
-    "confirmuploadfile": "Chcesz wysłać plik {$a}. Czy na pewno chcesz kontynuować?",
-    "downloading": "正在下载...",
     "emptyfilelist": "没有可显示的文件",
-    "errorcapturingaudio": "捕捉音频时出错",
-    "errorcapturingvideo": "捕捉视频时出错",
-    "errorreadingfile": "在读取文件“{$a}”时发生错误",
-    "file": "文件",
-    "fileuploaded": "文件已上传",
     "myfiles": "我的文件",
+<<<<<<< HEAD
     "readingfile": "读取文件中",
 	"photoalbums": "照片",
     "sitefiles": "站点文件",
@@ -21,4 +15,8 @@
 	"audio": "音频",
     "camera": "相机",
     "video": "视频"
+=======
+    "sitefiles": "站点文件",
+    "uploadfiles": "可以上传文件"
+>>>>>>> refs/remotes/moodlehq/master
 }

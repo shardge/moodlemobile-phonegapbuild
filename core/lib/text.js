@@ -21,9 +21,30 @@ angular.module('mm.core')
  * @description
  * This service provides functions related to text, like formatting texts from Moodle.
  */
-.factory('$mmText', function($q, $mmLang, $translate) {
+.factory('$mmText', function($q, $mmLang, $translate, $state) {
 
-    var self = {};
+    var self = {},
+        extensionRegex = new RegExp('^[a-z0-9]+$'),
+        element = document.createElement('div'); // Fake element to use in some functions, to prevent re-creating it each time.
+
+    /**
+     * Given a list of sentences, build a message with all of them wrapped in <p>.
+     *
+     * @module mm.core
+     * @ngdoc method
+     * @name $mmText#buildMessage
+     * @param  {String[]} messages Messages to show.
+     * @return {String}            Message with all the messages.
+     */
+    self.buildMessage = function(messages) {
+        var result = '';
+        angular.forEach(messages, function(message) {
+            if (message) {
+                result = result + '<p>' + message + '</p>';
+            }
+        });
+        return result;
+    };
 
     /**
      * Convert size in bytes into human readable format
@@ -142,6 +163,27 @@ angular.module('mm.core')
     };
 
     /**
+     * Shows a text on a new State
+     *
+     * @module mm.core
+     * @ngdoc method
+     * @name $mmText#expandText
+     * @param  {String} title Title of the new state.
+     * @param  {String} text  Content of the text to be expanded.
+     * @param  {Boolean} replaceLineBreaks  Replace line breaks by br tag. Default: false.
+     */
+    self.expandText = function(title, text, replaceLineBreaks) {
+        if (text.length > 0) {
+            // Open a new state with the interpolated contents.
+            $state.go('site.mm_textviewer', {
+                title: title,
+                content: text,
+                replacelinebreaks: replaceLineBreaks
+            });
+        }
+    };
+
+    /**
      * Treat the multilang tags from a HTML code, leaving only the current language.
      *
      * @module mm.core
@@ -227,6 +269,25 @@ angular.module('mm.core')
             .replace(/&quot;/g, '"')
             .replace(/&#039;/g, "'")
             .replace(/&nbsp;/g, ' ');
+    };
+
+    /**
+     * Decode HTML entities in a text. Equivalent to PHP html_entity_decode.
+     *
+     * @module mm.core
+     * @ngdoc method
+     * @name $mmText#decodeHTMLEntities
+     * @param  {String} text Text to decode.
+     * @return {String}      Decoded text.
+     */
+    self.decodeHTMLEntities = function(text) {
+        if (text && typeof text === 'string') {
+            element.innerHTML = text;
+            text = element.textContent;
+            element.textContent = '';
+        }
+
+        return text;
     };
 
     /**
@@ -320,6 +381,153 @@ angular.module('mm.core')
             filename = filename.substr(0, filename.indexOf('?'));
         }
         return filename;
+    };
+
+    /**
+     * Guess the extension of a file from its URL.
+     *
+     * This is very weak and unreliable.
+     *
+     * @module mm.core
+     * @ngdoc method
+     * @name $mmText#guessExtensionFromUrl
+     * @param {String} fileUrl The file URL.
+     * @return {String}        The lowercased extension without the dot, or undefined.
+     */
+    self.guessExtensionFromUrl = function(fileUrl) {
+        var split = fileUrl.split('.'),
+            candidate,
+            extension,
+            position;
+
+        if (split.length > 1) {
+            candidate = split.pop().toLowerCase();
+            // Remove params if any.
+            position = candidate.indexOf('?');
+            if (position > -1) {
+                candidate = candidate.substr(0, position);
+            }
+
+            if (extensionRegex.test(candidate)) {
+                extension = candidate;
+            }
+        }
+
+        return extension;
+    };
+
+    /**
+     * If a number has only 1 digit, add a leading zero to it.
+     *
+     * @module mm.core
+     * @ngdoc method
+     * @name $mmText#twoDigits
+     * @param  {Number|String} num Number to convert.
+     * @return {String}            Number with leading zeros.
+     */
+    self.twoDigits = function(num) {
+        if (num < 10) {
+            return '0' + num;
+        } else {
+            return '' + num; // Convert to string for coherence.
+        }
+    };
+
+    /**
+     * Escapes some characters in a string to be used as a regular expression.
+     *
+     * @module mm.core
+     * @ngdoc method
+     * @name $mmText#escapeForRegex
+     * @param  {String} text Text to escape.
+     * @return {String}      Escaped text.
+     */
+    self.escapeForRegex = function(text) {
+        return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    };
+
+    /**
+     * Count words in a text.
+     *
+     * @module mm.core
+     * @ngdoc method
+     * @name $mmText#countWords
+     * @param  {String} text Text to count.
+     * @return {Number}      Number of words.
+     */
+    self.countWords = function(text) {
+        // Clean HTML scripts and tags.
+        text = text.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
+        text = text.replace(/<\/?(?!\!)[^>]*>/gi, '');
+        // Decode HTML entities.
+        text = self.decodeHTMLEntities(text);
+        // Replace underscores (which are classed as word characters) with spaces.
+        text = text.replace(/_/gi, " ");
+        // Remove any characters that shouldn't be treated as word boundaries.
+        text = text.replace(/[\'"’-]/gi, "");
+        // Remove dots and commas from within numbers only.
+        text = text.replace(/([0-9])[.,]([0-9])/gi, '$1$2');
+
+        return text.split(/\w\b/gi).length - 1;
+    };
+
+    /**
+     * Get the pluginfile URL to replace @@PLUGINFILE@@ wildcards.
+     *
+     * @module mm.core
+     * @ngdoc method
+     * @name $mmText#getTextPluginfileUrl
+     * @param  {Object[]} files Files to extract the URL from. They need to have the URL in a 'fileurl' attribute.
+     * @return {String}         Pluginfile URL, false if no files found.
+     */
+    self.getTextPluginfileUrl = function(files) {
+        if (files && files.length) {
+            var fileURL = files[0].fileurl;
+            // Remove text after last slash (encoded or not).
+            return fileURL.substr(0, Math.max(fileURL.lastIndexOf('/'), fileURL.lastIndexOf('%2F')));
+        }
+
+        return false;
+    };
+
+    /**
+     * Replace @@PLUGINFILE@@ wildcards with the real URL in a text.
+     *
+     * @module mm.core
+     * @ngdoc method
+     * @name $mmText#replacePluginfileUrls
+     * @param  {String} text    Text to treat.
+     * @param  {Object[]} files Files to extract the pluginfile URL from. They need to have the URL in a 'fileurl' attribute.
+     * @return {String}         Treated text.
+     */
+    self.replacePluginfileUrls = function(text, files) {
+        if (text) {
+            var fileURL = self.getTextPluginfileUrl(files);
+            if (fileURL) {
+                return text.replace(/@@PLUGINFILE@@/g, fileURL);
+            }
+        }
+        return text;
+    };
+
+    /**
+     * Replace pluginfile URLs with @@PLUGINFILE@@ wildcards.
+     *
+     * @module mm.core
+     * @ngdoc method
+     * @name $mmText#restorePluginfileUrls
+     * @param  {String} text    Text to treat.
+     * @param  {Object[]} files Files to extract the pluginfile URL from.  They need to have the URL in a 'fileurl' attribute.
+     * @return {String}         Treated text.
+     */
+    self.restorePluginfileUrls = function(text, files) {
+        if (text) {
+            var fileURL = self.getTextPluginfileUrl(files);
+            if (fileURL) {
+                return text.replace(new RegExp(self.escapeForRegex(fileURL), 'g'), '@@PLUGINFILE@@');
+            }
+        }
+        return text;
     };
 
     return self;

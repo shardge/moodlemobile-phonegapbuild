@@ -66,11 +66,15 @@ angular.module('mm.core')
     };
 
     this.$get = function($ionicLoading, $ionicPopup, $injector, $translate, $http, $log, $q, $mmLang, $mmFS, $timeout, $mmApp,
-                $mmText, mmCoreWifiDownloadThreshold, mmCoreDownloadThreshold, $ionicScrollDelegate) {
+                $mmText, mmCoreWifiDownloadThreshold, mmCoreDownloadThreshold, $ionicScrollDelegate, $mmWS, $cordovaInAppBrowser,
+                $mmConfig, mmCoreSettingsRichTextEditor) {
 
         $log = $log.getInstance('$mmUtil');
 
-        var self = {}; // Use 'self' to be coherent with the rest of services.
+        var self = {}, // Use 'self' to be coherent with the rest of services.
+            matchesFn,
+            inputSupportKeyboard = ['date', 'datetime', 'datetime-local', 'email', 'month', 'number', 'password',
+                'search', 'tel', 'text', 'time', 'url', 'week'];
 
         /**
          * Formats a URL, trim, lowercase, etc...
@@ -146,7 +150,7 @@ angular.module('mm.core')
             }
 
             if (typeof resolved === 'undefined') {
-                throw new Error('Unexpected argument passed passed');
+                throw new Error('Unexpected argument object passed');
             }
             return resolved;
         };
@@ -270,27 +274,19 @@ angular.module('mm.core')
          *
          * node-webkit: Using the default application configured.
          * Android: Using the WebIntent plugin.
-         * iOs: Using the window.open method.
+         * iOs: Using handleDocumentWithURL.
          *
          * @module mm.core
          * @ngdoc method
          * @name $mmUtil#openFile
          * @param  {String} path The local path of the file to be open.
          * @return {Void}
+         * @todo Restore node-webkit support.
          */
         self.openFile = function(path) {
             var deferred = $q.defer();
 
-            if (false) {
-                // TODO Restore node-webkit support.
-
-                // Link is the file path in the file system.
-                // We use the node-webkit shell for open the file (pdf, doc) using the default application configured in the os.
-                // var gui = require('nw.gui');
-                // gui.Shell.openItem(path);
-                deferred.resolve();
-
-            } else if (window.plugins) {
+            if (window.plugins) {
                 var extension = $mmFS.getFileExtension(path),
                     mimetype = $mmFS.getMimeType(extension);
 
@@ -388,20 +384,127 @@ angular.module('mm.core')
          * @ngdoc method
          * @name $mmUtil#openInApp
          * @param  {String} url The URL to open.
+         * @param  {Object} options Override default options passed to $cordovaInAppBrowser#open
          * @return {Void}
          */
-        self.openInApp = function(url) {
+        self.openInApp = function(url, options) {
             if (!url) {
                 return;
             }
 
-            var options = 'enableViewPortScale=yes'; // Enable zoom on iOS.
-            if (ionic.Platform.isIOS() && url.indexOf('file://') === 0) {
+            options = options || {};
+
+            if (!options.enableViewPortScale) {
+                options.enableViewPortScale = 'yes'; // Enable zoom on iOS.
+            }
+
+            if (!options.location && ionic.Platform.isIOS() && url.indexOf('file://') === 0) {
                 // The URL uses file protocol, don't show it on iOS.
                 // In Android we keep it because otherwise we lose the whole toolbar.
-                options += ',location=no';
+                options.location = 'no';
             }
-            window.open(url, '_blank', options);
+
+            $cordovaInAppBrowser.open(url, '_blank', options);
+        };
+
+        /**
+         * Close the InAppBrowser window.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#closeInAppBrowser
+         * @return {Void}
+         */
+        self.closeInAppBrowser = function() {
+            $cordovaInAppBrowser.close();
+        };
+
+        /**
+         * Open an online file using platform specific method.
+         * Specially useful for audio and video since they can be streamed.
+         *
+         * node-webkit: Using the default application configured.
+         * Android: Using the WebIntent plugin.
+         * iOS: Using the window.open method (InAppBrowser)
+         *      We don't use iOS quickview framework because it doesn't support streaming.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#openOnlineFile
+         * @param  {String} url The URL of the file.
+         * @return {Promise}    Promise resolved when opened.
+         * @todo Restore node-webkit support.
+         */
+        self.openOnlineFile = function(url) {
+            var deferred = $q.defer();
+
+            if (ionic.Platform.isAndroid() && window.plugins && window.plugins.webintent) {
+                // In Android we need the mimetype to open it.
+                var extension,
+                    iParams;
+
+                $mmWS.getRemoteFileMimeType(url).then(function(mimetype) {
+                    if (!mimetype) {
+                        // Couldn't retireve mimetype. Try to guess it.
+                        extension = $mmText.guessExtensionFromUrl(url);
+                        mimetype = $mmFS.getMimeType(extension);
+                    }
+
+                    iParams = {
+                        action: "android.intent.action.VIEW",
+                        url: url,
+                        type: mimetype
+                    };
+
+                    window.plugins.webintent.startActivity(
+                        iParams,
+                        function() {
+                            $log.debug('Intent launched');
+                            deferred.resolve();
+                        },
+                        function() {
+                            $log.debug('Intent launching failed.');
+                            $log.debug('action: ' + iParams.action);
+                            $log.debug('url: ' + iParams.url);
+                            $log.debug('type: ' + iParams.type);
+
+                            if (!extension || extension.indexOf('/') > -1 || extension.indexOf('\\') > -1) {
+                                // Extension not found.
+                                $mmLang.translateAndRejectDeferred(deferred, 'mm.core.erroropenfilenoextension');
+                            } else {
+                                $mmLang.translateAndRejectDeferred(deferred, 'mm.core.erroropenfilenoapp');
+                            }
+                        }
+                    );
+                });
+            } else {
+                $log.debug('Opening remote file using window.open()');
+                window.open(url, '_blank');
+                deferred.resolve();
+            }
+
+            return deferred.promise;
+        };
+
+        /**
+         * Get the mimetype of a file given its URL. It'll perform a HEAD request to get it, if that
+         * fails it'll try to guess it using the URL.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#getMimeType
+         * @param  {String} url The URL of the file.
+         * @return {Promise}    Promise resolved with the mimetype.
+         */
+        self.getMimeType = function(url) {
+            return $mmWS.getRemoteFileMimeType(url).then(function(mimetype) {
+                if (!mimetype) {
+                    // Couldn't retireve mimetype. Try to guess it.
+                    extension = $mmText.guessExtensionFromUrl(url);
+                    mimetype = $mmFS.getMimeType(extension);
+                }
+                return mimetype || '';
+            });
         };
 
         /**
@@ -450,6 +553,39 @@ angular.module('mm.core')
                     if (modalShown) {
                         $ionicLoading.hide();
                     }
+                }
+            };
+        };
+
+        /**
+         * Displays a loading modal window using a certain template.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#showModalLoadingWithTemplate
+         * @param {String} [template] Template to use in the modal.
+         * @param {Object} [options]  Options. See http://ionicframework.com/docs/api/service/$ionicLoading/
+         * @return {Object}           Object with a 'dismiss' function to close the modal.
+         * @description
+         * Usage:
+         *     var modal = $mmUtil.showModalLoadingWithTemplate(template);
+         *     ...
+         *     modal.dismiss();
+         */
+        self.showModalLoadingWithTemplate = function(template, options) {
+            options = options || {};
+
+            if (!template) {
+                template = "<ion-spinner></ion-spinner><p>{{'mm.core.loading' | translate}}</p>";
+            }
+
+            options.template = template;
+
+            $ionicLoading.show(options);
+
+            return {
+                dismiss: function() {
+                    $ionicLoading.hide();
                 }
             };
         };
@@ -541,11 +677,17 @@ angular.module('mm.core')
          * @module mm.core
          * @ngdoc method
          * @name $mmUtil#showConfirm
-         * @param  {Mixed} template Template to show in the modal body. Can be a string or a promise.
-         * @return {Promise}        Promise resolved if the user confirms and rejected if he cancels.
+         * @param  {Mixed} template   Template to show in the modal body. Can be a string or a promise.
+         * @param  {String} [title]   Title of the modal.
+         * @param  {Object} [options] More options. See http://ionicframework.com/docs/api/service/$ionicPopup/
+         * @return {Promise}          Promise resolved if the user confirms and rejected if he cancels.
          */
-        self.showConfirm = function(template, title) {
-            return $ionicPopup.confirm({template: template, title: title}).then(function(confirmed) {
+        self.showConfirm = function(template, title, options) {
+            options = options || {};
+
+            options.template = template;
+            options.title = title;
+            return $ionicPopup.confirm(options).then(function(confirmed) {
                 if (!confirmed) {
                     return $q.reject();
                 }
@@ -752,6 +894,48 @@ angular.module('mm.core')
         };
 
         /**
+         * Returns hours, minutes and seconds in a human readable format
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#formatDuration
+         * @param  {Integer} duration       Duration in seconds
+         * @param  {Integer} [precission]   Number of elements to have in precission. 0 or undefined to full precission.
+         * @return {String}                 Full Human readable duration formatted
+         */
+        self.formatDuration = function(duration, precission) {
+            eventDuration = moment.duration(duration, 'seconds');
+
+            if (!precission) {
+                precission = 5;
+            }
+
+            durationString = "";
+            if (precission && eventDuration.years() > 0) {
+                durationString += " " + moment.duration(eventDuration.years(), 'years').humanize();
+                precission--;
+            }
+            if (precission && eventDuration.months() > 0) {
+                durationString += " " + moment.duration(eventDuration.months(), 'months').humanize();
+                precission--;
+            }
+            if (precission && eventDuration.days() > 0) {
+                durationString += " " + moment.duration(eventDuration.days(), 'days').humanize();
+                precission--;
+            }
+            if (precission && eventDuration.hours() > 0) {
+                durationString += " " + moment.duration(eventDuration.hours(), 'hours').humanize();
+                precission--;
+            }
+            if (precission && eventDuration.minutes() > 0) {
+                durationString += " " + moment.duration(eventDuration.minutes(), 'minutes').humanize();
+                precission--;
+            }
+
+            return durationString.trim();
+        };
+
+        /**
          * Empties an array without losing its reference.
          *
          * @module mm.core
@@ -761,6 +945,22 @@ angular.module('mm.core')
          */
         self.emptyArray = function(array) {
             array.length = 0; // Empty array without losing its reference.
+        };
+
+        /**
+         * Removes all properties from an object without losing its reference.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#emptyObject
+         * @param {Object} object Object to remove the properties.
+         */
+        self.emptyObject = function(object) {
+            for (var key in object) {
+                if (object.hasOwnProperty(key)) {
+                    delete object[key];
+                }
+            }
         };
 
         /**
@@ -1009,16 +1209,41 @@ angular.module('mm.core')
          * @return {Boolean}                    True if the element is found, false otherwise.
          */
         self.scrollToElement = function(container, selector, scrollDelegate, scrollParentClass) {
+            var position;
+
             if (!scrollDelegate) {
                 scrollDelegate = $ionicScrollDelegate;
             }
 
-            if (!scrollParentClass) {
-                scrollParentClass = 'scroll-content';
+            position = self.getElementXY(container, selector, scrollParentClass);
+            if (!position) {
+                return false;
             }
 
+            scrollDelegate.scrollTo(position[0], position[1]);
+            return true;
+        };
+
+        /**
+         * Retrieve the position of a element relative to another element.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#getElementXY
+         * @param  {Object} container           Element to search in.
+         * @param  {String} [selector]          Selector to find the element to scroll to. If not defined, scroll to the container.
+         * @param  {String} [scrollParentClass] Scroll Parent Class where to stop calculating the position. Default scroll-content.
+         * @return {Array}                      positionLeft, positionTop of the element relative to.
+         */
+        self.getElementXY = function(container, selector, positionParentClass) {
             var element = selector ? container.querySelector(selector) : container,
-                positionTop = positionLeft = 0;
+                offsetElement,
+                positionTop = 0,
+                positionLeft = 0;
+
+            if (!positionParentClass) {
+                positionParentClass = 'scroll-content';
+            }
 
             if (!element) {
                 return false;
@@ -1028,15 +1253,436 @@ angular.module('mm.core')
                 positionLeft += (element.offsetLeft - element.scrollLeft + element.clientLeft);
                 positionTop += (element.offsetTop - element.scrollTop + element.clientTop);
 
-                element = element.offsetParent;
-                // If scrolling element is reached, stop adding tops.
-                if (angular.element(element).hasClass(scrollParentClass)) {
+                offsetElement = element.offsetParent;
+                element = element.parentElement;
+
+                // Every parent class has to be checked but the position has to be got form offsetParent.
+                while (offsetElement != element && element) {
+                    // If positionParentClass element is reached, stop adding tops.
+                    if (angular.element(element).hasClass(positionParentClass)) {
+                        element = false;
+                    } else {
+                        element = element.parentElement;
+                    }
+                }
+
+                // Finally, check again.
+                if (angular.element(element).hasClass(positionParentClass)) {
                     element = false;
                 }
             }
 
-            scrollDelegate.scrollTo(positionLeft, positionTop);
-            return true;
+            return [positionLeft, positionTop];
+        };
+
+        /**
+         * Search all the URLs in a CSS file content.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#extractUrlsFromCSS
+         * @param  {String} code CSS code.
+         * @return {String[]}    List of URLs.
+         */
+        self.extractUrlsFromCSS = function(code) {
+            // First of all, search all the url(...) occurrences that don't include "data:".
+            var urls = [],
+                matches = code.match(/url\(\s*["']?(?!data:)([^)]+)\)/igm);
+
+            // Extract the URL form each match.
+            angular.forEach(matches, function(match) {
+                var submatches = match.match(/url\(\s*['"]?([^'"]*)['"]?\s*\)/im);
+                if (submatches && submatches[1]) {
+                    urls.push(submatches[1]);
+                }
+            });
+
+            return urls;
+        };
+
+        /**
+         * Returns the contents of a certain selection in a DOM element.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#getContentsOfElement
+         * @param  {Object} element  DOM element to search in.
+         * @param  {String} selector Selector to search.
+         * @return {String}          Selection contents. Undefined if not found.
+         */
+        self.getContentsOfElement = function(element, selector) {
+            if (element) {
+                var el = element[0] || element, // Convert from jqLite to plain JS if needed.
+                    selected = el.querySelector(selector);
+                if (selected) {
+                    return selected.innerHTML;
+                }
+            }
+        };
+
+        /**
+         * Search and remove a certain element from inside another element.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#removeElement
+         * @param  {Object} element  DOM element to search in.
+         * @param  {String} selector Selector to search.
+         * @return {Void}
+         */
+        self.removeElement = function(element, selector) {
+            if (element) {
+                var el = element[0] || element, // Convert from jqLite to plain JS if needed.
+                    selected = el.querySelector(selector);
+                if (selected) {
+                    angular.element(selected).remove();
+                }
+            }
+        };
+
+        /**
+         * Search and remove a certain element from an HTML code.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#removeElementFromHtml
+         * @param  {String} html       HTML code to change.
+         * @param  {String} selector   Selector to search.
+         * @param  {Boolean} removeAll True if it should remove all matches found, false if it should only remove the first one.
+         * @return {String}            HTML without the element.
+         */
+        self.removeElementFromHtml = function(html, selector, removeAll) {
+            // Create a fake div element so we can search using querySelector.
+            var div = document.createElement('div'),
+                selected;
+
+            div.innerHTML = html;
+
+            if (removeAll) {
+                selected = div.querySelectorAll(selector);
+                angular.forEach(selected, function(el) {
+                    angular.element(el).remove();
+                });
+            } else {
+                selected = div.querySelector(selector);
+                if (selected) {
+                    angular.element(selected).remove();
+                }
+            }
+
+            return div.innerHTML;
+        };
+
+        /**
+         * Search for certain classes in an element contents and replace them with the specified new values.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#replaceClassesInElement
+         * @param  {Object} element DOM element.
+         * @param  {Object} map     Mapping of the classes to replace. Keys must be the value to replace, values must be
+         *                          the new class name. Example: {'correct': 'mm-question-answer-correct'}.
+         * @return {Void}
+         */
+        self.replaceClassesInElement = function(element, map) {
+            element = element[0] || element; // Convert from jqLite to plain JS if needed.
+
+            angular.forEach(map, function(newValue, toReplace) {
+                var matches = element.querySelectorAll('.' + toReplace);
+                angular.forEach(matches, function(element) {
+                    element.className = element.className.replace(toReplace, newValue);
+                });
+            });
+        };
+
+        /**
+         * Equivalent to element.closest(). If the browser doesn't support element.closest, it will
+         * traverse the parents to achieve the same functionality.
+         * Returns the closest ancestor of the current element (or the current element itself) which matches the selector.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#closest
+         * @param  {Object} element  DOM Element.
+         * @param  {String} selector Selector to search.
+         * @return {Object}          Closest ancestor.
+         */
+        self.closest = function(element, selector) {
+            // Try to use closest if the browser supports it.
+            if (typeof element.closest == 'function') {
+                return element.closest(selector);
+            }
+
+            if (!matchesFn) {
+                // Find the matches function supported by the browser.
+                ['matches','webkitMatchesSelector','mozMatchesSelector','msMatchesSelector','oMatchesSelector'].some(function(fn) {
+                    if (typeof document.body[fn] == 'function') {
+                        matchesFn = fn;
+                        return true;
+                    }
+                    return false;
+                });
+
+                if (!matchesFn) {
+                    return;
+                }
+            }
+
+            // Traverse parents.
+            while (element) {
+                if (element[matchesFn](selector)) {
+                    return element;
+                }
+                element = element.parentElement;
+            }
+        };
+
+        /**
+         * Extract the downloadable URLs from an HTML.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#extractDownloadableFilesFromHtml
+         * @param  {String} html HTML code.
+         * @return {String[]}    List of file urls.
+         */
+        self.extractDownloadableFilesFromHtml = function(html) {
+            var div = document.createElement('div'),
+                elements,
+                urls = [];
+
+            div.innerHTML = html;
+            elements = div.querySelectorAll('a, img, audio, video, source');
+
+            angular.forEach(elements, function(element) {
+                var url = element.tagName === 'A' ? element.href : element.src;
+                if (url && self.isDownloadableUrl(url)) {
+                    urls.push(url);
+                }
+            });
+
+            return urls;
+        };
+
+        /**
+         * Converts an object into an array of objects, where each entry is an object containing
+         * the key and value of the original object.
+         * For example, it can convert {size: 2} into [{name: 'size', value: 2}].
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#objectToArrayOfObjects
+         * @param  {Object} obj       Object to convert.
+         * @param  {String} keyName   Name of the properties where to store the keys.
+         * @param  {String} valueName Name of the properties where to store the values.
+         * @param  {Boolean} sort     True to sort keys alphabetically, false otherwise.
+         * @return {Object[]}         Array of objects with the name & value of each property.
+         */
+        self.objectToArrayOfObjects = function(obj, keyName, valueName, sort) {
+            var result = [],
+                keys = Object.keys(obj);
+
+            if (sort) {
+                keys = keys.sort();
+            }
+
+            angular.forEach(keys, function(key) {
+                var entry = {};
+                entry[keyName] = key;
+                entry[valueName] = obj[key];
+                result.push(entry);
+            });
+            return result;
+        };
+
+        /**
+         * Tests to see whether two arrays or objects have the same value at a particular key.
+         * Missing values are replaced by '', and the values are compared with ===.
+         * Booleans and numbers are cast to string before comparing.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#sameAtKeyMissingIsBlank
+         * @param  {Object} obj1 The first object or array.
+         * @param  {Object} obj2 The second object or array.
+         * @param  {String} key  Key to check.
+         * @return {Boolean}     Whether the two objects/arrays have the same value (or lack of one) for a given key.
+         */
+        self.sameAtKeyMissingIsBlank = function(obj1, obj2, key) {
+            var value1 = typeof obj1[key] != 'undefined' ? obj1[key] : '',
+                value2 = typeof obj2[key] != 'undefined' ? obj2[key] : '';
+
+            if (typeof value1 == 'number' || typeof value1 == 'boolean') {
+                value1 = '' + value1;
+            }
+            if (typeof value2 == 'number' || typeof value2 == 'boolean') {
+                value2 = '' + value2;
+            }
+            return value1 === value2;
+        };
+
+        /**
+         * Merge two arrays, removing duplicate values.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#mergeArraysWithoutDuplicates
+         * @param  {Array} array1 The first array.
+         * @param  {Array} array2 The second array.
+         * @return {Array}        Merged array.
+         */
+        self.mergeArraysWithoutDuplicates = function(array1, array2) {
+            return self.uniqueArray(array1.concat(array2));
+        };
+
+        /**
+         * Return an array without duplicate values.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#uniqueArray
+         * @param  {Array} array The array to treat.
+         * @return {Array}       Array without duplicate values.
+         */
+        self.uniqueArray = function(array) {
+            var unique = [],
+                len = array.length;
+            for (var i = 0; i < len; i++) {
+                var value = array[i];
+                if (unique.indexOf(value) == -1) {
+                    unique.push(value);
+                }
+            }
+            return unique;
+        };
+
+        /**
+         * Given an error returned by a WS call (site.read, site.write),
+         * check if the error is generated by the app or it has been returned by the WebSwervice.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#isWebServiceError
+         * @param  {String}  error Error returned.
+         * @return {Boolean}       True if the error was returned by the WebService, false otherwise.
+         */
+        self.isWebServiceError = function(error) {
+            var localErrors = [
+                $translate.instant('mm.core.wsfunctionnotavailable'),
+                $translate.instant('mm.core.lostconnection'),
+                $translate.instant('mm.core.userdeleted'),
+                $translate.instant('mm.core.unexpectederror'),
+                $translate.instant('mm.core.networkerrormsg'),
+                $translate.instant('mm.core.serverconnection'),
+                $translate.instant('mm.core.errorinvalidresponse')
+
+            ];
+            return error && localErrors.indexOf(error) == -1;
+        };
+
+        /**
+         * Focus an element and open keyboard.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#focusElement
+         * @param  {Object} el DOM element to focus.
+         * @return {Void}
+         */
+        self.focusElement = function(el) {
+            if (el && el.focus) {
+                el.focus();
+                if (ionic.Platform.isAndroid() && self.supportsInputKeyboard(el)) {
+                    // On some Android versions the keyboard doesn't open automatically.
+                    $mmApp.openKeyboard();
+                }
+            }
+        };
+
+        /**
+         * Check if an element supports input via keyboard.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#supportsInputKeyboard
+         * @param  {Object} el DOM element to check.
+         * @return {Boolean}   True if supports input using keyboard.
+         */
+        self.supportsInputKeyboard = function(el) {
+            return el && !el.disabled && (el.tagName.toLowerCase() == 'textarea' ||
+                (el.tagName.toLowerCase() == 'input' && inputSupportKeyboard.indexOf(el.type) != -1));
+        };
+
+        /**
+         * Check if rich text editor is supported in the platform.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#isRichTextEditorSupported
+         * @return {Boolean} True if supported, false otherwise.
+         */
+        self.isRichTextEditorSupported = function() {
+            // Enabled for all platforms different from iOS and Android.
+            if (!ionic.Platform.isIOS() && !ionic.Platform.isAndroid()) {
+                return true;
+            }
+
+            // Check Android version >= 4.4
+            if (ionic.Platform.isAndroid() && ionic.Platform.version() >= 4.4) {
+                return true;
+            }
+
+            // Check iOS version > 6
+            if (ionic.Platform.isIOS() && ionic.Platform.version() > 6) {
+                return true;
+            }
+
+            return false;
+        };
+
+        /**
+         * Check if rich text editor is enabled.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#isRichTextEditorEnabled
+         * @return {Promise} Promise resolved with boolean: true if enabled, false otherwise.
+         */
+        self.isRichTextEditorEnabled = function() {
+            if (self.isRichTextEditorSupported()) {
+                return $mmConfig.get(mmCoreSettingsRichTextEditor, true);
+            }
+
+            return $q.when(false);
+        };
+
+        /**
+         * Given a list of files, check if there are repeated names.
+         *
+         * @module mm.core
+         * @ngdoc method
+         * @name $mmUtil#hasRepeatedFilenames
+         * @param  {Object[]} files List of files.
+         * @return {Mixed}          String with error message if repeated, false if no repeated.
+         */
+        self.hasRepeatedFilenames = function(files) {
+            if (!files || !files.length) {
+                return false;
+            }
+
+            var names = [];
+
+            // Check if there are 2 files with the same name.
+            for (var i = 0; i < files.length; i++) {
+                var name = files[i].filename || files[i].name;
+                if (names.indexOf(name) > -1) {
+                    return $translate.instant('mm.core.filenameexist', {$a: name});
+                } else {
+                    names.push(name);
+                }
+            }
+
+            return false;
         };
 
         return self;

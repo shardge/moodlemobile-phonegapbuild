@@ -2,10 +2,10 @@
 <widget xmlns     = "http://www.w3.org/ns/widgets"
         xmlns:gap = "http://phonegap.com/ns/1.0"
         xmlns:android = "http://schemas.android.com/apk/res/android"
-        id        = "cn.edu.tju.glearning"
-        versionCode = "2011"
-        version   = "3.0.0">
-    <name>天津大学研究生教学平台</name>
+        id        = "com.moodle.moodlemobile"
+        versionCode = "2014"
+        version   = "3.1.2">
+    <name>Moodle Mobile</name>
 
     <description>
         Graduate School of Tianjin University e-Learning app
@@ -16,7 +16,7 @@
     </author>
 
     <gap:config-file platform="ios" parent="CFBundleShortVersionString">
-        <string>3.0.0</string>
+        <string>3.1.2</string>
     </gap:config-file>
 
     <gap:platform name="ios" />
@@ -30,10 +30,11 @@
     <allow-navigation href="cdvfile:*" />
     <allow-navigation href="content:*" />
     <allow-navigation href="data:*" />
+    <allow-navigation href="*" />
 
     <allow-intent href="*" />
 
-    <preference name="phonegap-version" value="cli-5.2.0" />
+    <preference name="phonegap-version" value="cli-6.1.0" />
     <preference name="orientation"      value="default" />
     <preference name="target-device"    value="universal" />
     <preference name="fullscreen"       value="false" />
@@ -112,17 +113,19 @@
     <gap:plugin name="cordova-plugin-globalization" source="npm" />
     <gap:plugin name="cordova-plugin-inappbrowser" source="npm" />
     <gap:plugin name="cordova-plugin-network-information" source="npm" />
-    <gap:plugin name="cordova-plugin-statusbar" source="npm" />
-    <gap:plugin name="cordova-plugin-whitelist" source="npm" version="1.0.0" />
+    <gap:plugin name="cordova-plugin-statusbar" source="npm" version="2.1.2" />
+    <gap:plugin name="cordova-plugin-whitelist" source="npm" />
     <gap:plugin name="cordova-plugin-splashscreen" source="npm" />
 
-    <gap:plugin name="com.phonegap.plugins.pushplugin" />
+    <gap:plugin name="phonegap-plugin-push" source="npm" version="1.7.0">
+        <param name="SENDER_ID" value="694767596569" />
+    </gap:plugin>
     <gap:plugin name="net.tunts.webintent" />
     <gap:plugin name="cordova-plugin-customurlscheme" source="npm">
         <param name="URL_SCHEME" value="moodlemobile" />
     </gap:plugin>
     <gap:plugin name="ionic-plugin-keyboard" source="npm" />
-    <gap:plugin name="cordova-plugin-local-notifications-mm" source="npm" />
+    <gap:plugin name="de.appplant.cordova.plugin.local-notification" source="npm" />
     <gap:plugin name="ch.ti8m.documenthandler" version="0.2.1" />
     <gap:plugin name="cordova-plugin-zip" source="npm" />
 
