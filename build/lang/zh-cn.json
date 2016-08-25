@@ -408,12 +408,8 @@
 	"mm.settings.enablesyncwifi": "仅允许WiFi连接时同步",
     "mm.settings.success": "成功",
     "mm.settings.total": "总共",
-<<<<<<< HEAD
-	"mm.sidemenu.appsettings": "设置",
-=======
     "mm.sharedfiles.rename": "重命名",
     "mm.sharedfiles.replace": "替换",
->>>>>>> refs/remotes/moodlehq/master
     "mm.sidemenu.changesite": "注销",
     "mm.sidemenu.help": "帮助",
     "mm.sidemenu.mycourses": "我的课程",
@@ -464,21 +460,7 @@
     "mma.coursecompletion.viewcoursereport": "查看课程报告",
     "mma.files.emptyfilelist": "没有可显示的文件",
     "mma.files.myfiles": "我的文件",
-<<<<<<< HEAD
-    "mma.files.readingfile": "文件读取中",
     "mma.files.sitefiles": "站点文件",
-	 "mma.files.myprivatefiles": "我的私人文件",
-    "mma.files.myprivatefilesdesc": "这些文件存放于e-Learning平台上你的私人文件区域。",
-    "mma.files.photoalbums": "照片",
-	 "mm.core.pulltorefresh": "拖动更新",
-	  "mma.files.audio": "音频",
-    "mma.files.camera": "拍摄",
-    "mma.files.sitefilesdesc": "其他e-Learning平台上的文件。",
-    "mma.files.success": "成功",
-    "mma.files.uploadafile": "上传一个文件",
-=======
-    "mma.files.sitefiles": "站点文件",
->>>>>>> refs/remotes/moodlehq/master
     "mma.files.uploadfiles": "可以上传文件",
     "mma.frontpage.sitehome": "首页",
     "mma.grades.average": "平均",
@@ -737,27 +719,6 @@
     "mma.mod_wiki.newpagetitle": "新页面标题",
     "mma.mod_wiki.nocontent": "此页面无内容",
     "mma.mod_wiki.notingroup": "不在小组内",
-<<<<<<< HEAD
-    "mma.notes.addnewnote": "添加新备注",
-    "mma.notes.coursenotes": "课程备注",
-    "mma.notes.eventnotecreated": "创建了笔记",
-    "mma.notes.note": "备注",
-    "mma.notes.notes": "您的备注",
-    "mma.notes.personalnotes": "私人备注",
-    "mma.notes.publishstate": "上下文",
-    "mma.notes.sitenotes": "全站备注",
-    "mma.notifications.notifications": "通知",
-    "mma.notifications.therearentnotificationsyet": "没有通知",	
-	"mm.settings.enabledownloadsection": "允许下载小节",
-    "mm.settings.enabledownloadsectiondescription": "禁止该选项将加快加载的速度.",
-	"mm.settings.reportinbackground": "自动报告错误",
-	 "mm.login.confirmdeletesite": "确定要删除{{sitename}}吗?",
-	"mm.courses.filtermycourses": "过滤我的课程",
-	"mma.messages.newmessage": "新消息...",
-    "mma.messages.nomessages": "无消息",
-    "mma.participants.participants": "课程参与者"
-=======
     "mma.mod_wiki.pagename": "页码",
     "mma.mod_wiki.wrongversionlock": "在您正编辑此页面时，另一个人已经做了编辑，所以您的修改已过时。"
->>>>>>> refs/remotes/moodlehq/master
 }
