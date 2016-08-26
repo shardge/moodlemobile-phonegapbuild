@@ -44,12 +44,8 @@
     "errordeletefile": "Error deleting the file. Please try again.",
     "errordownloading": "Error downloading file.",
     "errordownloadingsomefiles": "Error downloading module files. Some files might be missing.",
-<<<<<<< HEAD
     "errorinvalidresponse": "Invalid response received. Please contact e-Learning platform administrator if the error persists.",
-=======
     "errorfileexistssamename": "There's already a file with this name.",
-    "errorinvalidresponse": "Invalid response received. Please contact your Moodle site administrator if the error persists.",
->>>>>>> refs/remotes/moodlehq/master
     "erroropenfilenoapp": "Error opening the file: no app found to open this kind of file.",
     "erroropenfilenoextension": "Error opening the file: the file doesn't have extension.",
     "erroropenpopup": "This activity is trying to open a popup. This is not supported in this app.",
@@ -124,13 +120,10 @@
     "previous": "Previous",
     "pulltorefresh": "Pull to refresh",
     "refresh": "Refresh",
-<<<<<<< HEAD
+
     "requireduserdatamissing": "This user lacks some required profile data. Please, fill this data in e-Learning platform and try again.<br>{{$a}}",
-=======
-    "requireduserdatamissing": "This user lacks some required profile data. Please, fill this data in your Moodle and try again.<br>{{$a}}",
     "retry": "Retry",
     "save": "Save",
->>>>>>> refs/remotes/moodlehq/master
     "search": "Search",
     "searching": "Searching",
     "sec" : "sec",
