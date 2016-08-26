@@ -10906,17 +10906,7 @@ angular.module('mm.core.fileuploader')
   };
 });
 
-<<<<<<< HEAD
-angular.module('mm.core.login')
-.controller('mmLoginSiteCtrl', ["$scope", "$state", "$mmSitesManager", "$mmUtil", "$translate", "$ionicHistory", "$mmApp", "$ionicModal", "$mmLoginHelper", function($scope, $state, $mmSitesManager, $mmUtil, $translate, $ionicHistory, $mmApp,
-        $ionicModal, $mmLoginHelper) {
-    $scope.siteurl = 'http://glearning.tju.edu.cn';
-    $scope.connect = function(url) {
-        $mmApp.closeKeyboard();
-        if (!url) {
-            $mmUtil.showErrorModal('mm.login.siteurlrequired', true);
-            return;
-=======
+
 angular.module('mm.core.fileuploader')
 .provider('$mmFileUploaderDelegate', function() {
     var handlers = {},
@@ -10925,7 +10915,6 @@ angular.module('mm.core.fileuploader')
         if (typeof handlers[addon] !== 'undefined') {
             console.log("$mmFileUploaderDelegate: Addon '" + handlers[addon].addon + "' already registered as handler");
             return false;
->>>>>>> refs/remotes/moodlehq/master
         }
         console.log("$mmFileUploaderDelegate: Registered addon '" + addon + "' as handler.");
         handlers[addon] = {
@@ -11499,7 +11488,7 @@ angular.module('mm.core.login')
 angular.module('mm.core.login')
 .controller('mmLoginSiteCtrl', ["$scope", "$state", "$mmSitesManager", "$mmUtil", "$translate", "$ionicHistory", "$mmApp", "$ionicModal", "$mmLoginHelper", function($scope, $state, $mmSitesManager, $mmUtil, $translate, $ionicHistory, $mmApp,
         $ionicModal, $mmLoginHelper) {
-    $scope.siteurl = '';
+    $scope.siteurl = 'http://glearning.tju.edu.cn';
     $scope.connect = function(url) {
         $mmApp.closeKeyboard();
         if (!url) {
@@ -37525,15 +37514,9 @@ angular.module('mm.addons.mod_quiz')
 angular.module('mm.core')
 
 .constant('mmCoreConfigConstants', {
-<<<<<<< HEAD
     "app_id" : "cn.edu.tju.glearning",
-    "versioncode" : "2011",
-    "versionname" : "3.0.0",
-=======
-    "app_id" : "com.moodle.moodlemobile",
     "versioncode" : "2014",
     "versionname" : "3.1.2",
->>>>>>> refs/remotes/moodlehq/master
     "cache_expiration_time" : 300000,
     "default_lang" : "zh-cn",
     "languages": {"zh-cn" : "简体中文", "en": "English"},
