@@ -5,7 +5,7 @@
         id        = "cn.edu.tju.glearning"
         versionCode = "2014"
         version   = "3.1.2">
-    <name>Moodle Mobile</name>
+    <name>天津大学研究生教学平台</name>
 
     <description>
         Graduate School of Tianjin University e-Learning app
