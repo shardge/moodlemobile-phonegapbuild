@@ -377,6 +377,7 @@
     "mm.fileuploader.video": "视频",
     "mm.login.authenticating": "验证中",
     "mm.login.cancel": "取消",
+	"mm.login.confirmdeletesite": "确定要注销 {{sitename}}?",
     "mm.login.connect": "连接",
 	"mm.login.connecttomoodle": "连接天津大学研究生e-Learning",
     "mm.login.help": "帮助",
