@@ -389,6 +389,7 @@
     "mm.question.notyetanswered": "仍未作答",
     "mm.question.partiallycorrect": "部分正确",
     "mm.settings.about": "关于",
+	"mm.sidemenu.appsettings":"设置",
     "mm.settings.cacheexpirationtime": "缓存过期时间（毫秒）",
     "mm.settings.currentlanguage": "当前语言",
     "mm.settings.deletesitefiles": "您确定要删除从本站下载的文件？",
